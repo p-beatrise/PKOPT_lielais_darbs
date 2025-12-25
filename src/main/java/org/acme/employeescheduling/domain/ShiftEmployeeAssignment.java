@@ -6,21 +6,14 @@ import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
 @PlanningEntity
 public class ShiftEmployeeAssignment {
 
-    /** Planning variable: which employee is assigned */
     @PlanningVariable(valueRangeProviderRefs = "employeeRange")
     private Employee employee;
     
-    /** Problem fact: which shift this assignment belongs to */
     private Shift shift;
 
-
-    // ---------------- Constructors ----------------
-
-    /** Required by Timefold / Jackson */
     public ShiftEmployeeAssignment() {
     }
 
-    /** ✅ This constructor fixes your error */
     public ShiftEmployeeAssignment(Shift shift) {
         this.shift = shift;
     }
@@ -42,9 +35,6 @@ public class ShiftEmployeeAssignment {
     public void setEmployee(Employee employee) {
         this.employee = employee;
     }
-
-    // ---------------- Equality ----------------
-    // Optional but recommended if referenced in constraints
 
     @Override
     public String toString() {

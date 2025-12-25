@@ -76,9 +76,13 @@ public class EmployeeScheduleResource {
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces(MediaType.TEXT_PLAIN)
     public String solve(EmployeeSchedule problem) {
-    	createAssignmentSlots(problem);
+        // Ensure assignments are rebuilt fresh
+        problem.rebuildAssignments(2); 
+        LOGGER.info("Rebuilt assignments, shifts size = {}", problem.getShifts().size());
+
         String jobId = UUID.randomUUID().toString();
         jobIdToJob.put(jobId, Job.ofSchedule(problem));
+
         solverManager.solveBuilder()
                 .withProblemId(jobId)
                 .withProblemFinder(jobId_ -> jobIdToJob.get(jobId).schedule)
@@ -88,7 +92,22 @@ public class EmployeeScheduleResource {
                     LOGGER.error("Failed solving jobId ({}).", jobId, exception);
                 })
                 .run();
+
         return jobId;
+    }
+    
+    @Inject
+    DemoDataGenerator demoDataGenerator;
+    
+    @POST
+    @Path("/solve-demo")
+    @Produces(MediaType.TEXT_PLAIN)
+    public String solveDemo() {
+        // Generate a fresh demo schedule each time
+        EmployeeSchedule demoProblem = demoDataGenerator.generateDemoData();
+        demoProblem.rebuildAssignments(2);
+        LOGGER.info("Generated fresh demo schedule, shifts size = {}", demoProblem.getShifts().size());
+        return solve(demoProblem);
     }
 
     @Operation(summary = "Submit a schedule to analyze its score.")
@@ -196,20 +215,6 @@ public class EmployeeScheduleResource {
         static Job ofException(Throwable error) {
             return new Job(null, error);
         }
-    }
-    
-    private void createAssignmentSlots(EmployeeSchedule schedule) {
-        var assignments = new java.util.ArrayList<org.acme.employeescheduling.domain.ShiftEmployeeAssignment>();
-
-        int maxEmployeesPerShift = 3; // reasonable upper bound
-
-        for (var shift : schedule.getShiftList()) {
-            for (int i = 0; i < maxEmployeesPerShift; i++) {
-                assignments.add(new org.acme.employeescheduling.domain.ShiftEmployeeAssignment(shift));
-            }
-        }
-
-        schedule.setAssignmentList(assignments);
     }
     
 }

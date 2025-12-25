@@ -42,6 +42,9 @@ $(document).ready(function () {
     $("#solveButton").click(function () {
         solve();
     });
+	$("#solveDemoButton").click(function () {
+	    solveDemo();
+	});
     $("#stopSolvingButton").click(function () {
         stopSolving();
     });
@@ -115,29 +118,18 @@ function switchDataDropDownItemActive(newItem) {
     $("#" + newItem + "TestData").addClass(activeCssClass);
 }
 
-function getShiftColor(shift, employee) {
-    const shiftStart = JSJoda.LocalDateTime.parse(shift.start);
-    const shiftStartDateString = shiftStart.toLocalDate().toString();
-    const shiftEnd = JSJoda.LocalDateTime.parse(shift.end);
-    const shiftEndDateString = shiftEnd.toLocalDate().toString();
-    if (employee.unavailableDates.includes(shiftStartDateString) ||
-        // The contains() check is ignored for a shift end at midnight (00:00:00).
-        (shiftEnd.isAfter(shiftStart.toLocalDate().plusDays(1).atStartOfDay()) &&
-            employee.unavailableDates.includes(shiftEndDateString))) {
-        return UNAVAILABLE_COLOR
-    } else if (employee.undesiredDates.includes(shiftStartDateString) ||
-        // The contains() check is ignored for a shift end at midnight (00:00:00).
-        (shiftEnd.isAfter(shiftStart.toLocalDate().plusDays(1).atStartOfDay()) &&
-            employee.undesiredDates.includes(shiftEndDateString))) {
-        return UNDESIRED_COLOR
-    } else if (employee.desiredDates.includes(shiftStartDateString) ||
-        // The contains() check is ignored for a shift end at midnight (00:00:00).
-        (shiftEnd.isAfter(shiftStart.toLocalDate().plusDays(1).atStartOfDay()) &&
-            employee.desiredDates.includes(shiftEndDateString))) {
-        return DESIRED_COLOR
-    } else {
-        return " #729fcf"; // Tango Sky Blue
-    }
+function solveDemo() {
+    $.post("/schedules/solve-demo", function (data) {
+        scheduleId = data; // job ID returned from backend
+        demoDataId = null;  // new demo schedule, ignore previous demoDataId
+        loadedSchedule = null; // reset currently loaded schedule
+        refreshSolvingButtons(true); // start auto-refreshing
+
+        // Immediately fetch the schedule to start rendering timeline
+        refreshSchedule();
+    }, "text").fail(function (xhr) {
+        showError("Solve demo failed.", xhr);
+    });
 }
 
 function refreshSchedule() {
@@ -171,7 +163,7 @@ function renderSchedule(schedule) {
     const scheduleStart = schedule.shifts
         .map(shift => JSJoda.LocalDateTime.parse(shift.start).toLocalDate())
         .sort()[0].toString();
-    const scheduleEnd = JSJoda.LocalDate.parse(scheduleStart).plusDays(7).toString();
+    const scheduleEnd = JSJoda.LocalDate.parse(scheduleStart).plusDays(2).toString();
 
     windowStart = scheduleStart;
     windowEnd = scheduleEnd;
@@ -192,31 +184,7 @@ function renderSchedule(schedule) {
             );
         byEmployeeGroupDataSet.add({id: employee.name, content: employeeGroupElement.html()});
 
-        // Render unavailable / undesired / desired dates
-        ['unavailableDates', 'undesiredDates', 'desiredDates'].forEach(type => {
-            const color = type === 'unavailableDates' ? UNAVAILABLE_COLOR
-                        : type === 'undesiredDates' ? UNDESIRED_COLOR
-                        : DESIRED_COLOR;
-            const label = type === 'unavailableDates' ? 'Unavailable'
-                        : type === 'undesiredDates' ? 'Undesired'
-                        : 'Desired';
-            
-            (employee[type] || []).forEach((rawDate, dateIndex) => {
-                const date = JSJoda.LocalDate.parse(rawDate);
-                const start = date.atStartOfDay().toString();
-                const end = date.plusDays(1).atStartOfDay().toString();
-                const byEmployeeShiftElement = $('<div/>').append($('<h5 class="card-title mb-1"/>').text(label));
-                byEmployeeItemDataSet.add({
-                    id: `employee-${index}-${type}-${dateIndex}`,
-                    group: employee.name,
-                    content: byEmployeeShiftElement.html(),
-                    start: start,
-                    end: end,
-                    type: "background",
-                    style: "opacity: 0.5; background-color: " + color,
-                });
-            });
-        });
+        
     });
 
     // Render shifts using assignmentList
@@ -276,7 +244,6 @@ function renderSchedule(schedule) {
                 });
                 byLocationShiftElement.append(badgesContainer);
 
-                const shiftColor = getShiftColor(shift, assignment.employee);
 				const itemId = `shift-${index}-emp-${assignment.employee.name}-${assignIndex}`;
                 byEmployeeItemDataSet.add({
                     id: itemId,
@@ -284,7 +251,6 @@ function renderSchedule(schedule) {
                     content: byEmployeeShiftElement.html(),
                     start: shift.start,
                     end: shift.end,
-                    style: "background-color: " + shiftColor
                 });
                 byLocationItemDataSet.add({
                     id: itemId,
@@ -292,7 +258,6 @@ function renderSchedule(schedule) {
                     content: byLocationShiftElement.html(),
                     start: shift.start,
                     end: shift.end,
-                    style: "background-color: " + shiftColor
                 });
             });
         }
@@ -300,7 +265,7 @@ function renderSchedule(schedule) {
         
     });
 
-    $("#info").text(`This dataset has ${schedule.shifts.length} shifts and ${schedule.employees.length} employees.`);
+    $("#info").text(`This dataset has ${schedule.shifts.length} shifts, ${schedule.assignmentList?.length} assignments and ${schedule.employees.length} employees.`);
 
     byEmployeeTimeline.setWindow(scheduleStart, scheduleEnd);
     byLocationTimeline.setWindow(scheduleStart, scheduleEnd);

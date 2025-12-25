@@ -1,5 +1,6 @@
 package org.acme.employeescheduling.domain;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import ai.timefold.solver.core.api.domain.solution.PlanningEntityCollectionProperty;
@@ -14,76 +15,93 @@ import ai.timefold.solver.core.api.solver.SolverStatus;
 public class EmployeeSchedule {
 
 	@ValueRangeProvider(id = "employeeRange")
-    private List<Employee> employees;
-	
+	private List<Employee> employees;
+
 	@ProblemFactCollectionProperty
-    private List<Shift> shifts;
+	public List<Shift> shifts;
 
-    @PlanningEntityCollectionProperty
-    private List<ShiftEmployeeAssignment> assignmentList;
-    
-    @PlanningScore
-    private HardSoftBigDecimalScore score;
+	@PlanningEntityCollectionProperty
+	private List<ShiftEmployeeAssignment> assignmentList;
 
-    private SolverStatus solverStatus;
+	@PlanningScore
+	private HardSoftBigDecimalScore score;
 
-    // No-arg constructor required for Timefold
-    public EmployeeSchedule() {}
+	private SolverStatus solverStatus;
 
-    public EmployeeSchedule(List<Employee> employees, List<Shift> shifts,
-            List<ShiftEmployeeAssignment> assignmentList) {
-        this.employees = employees;
-        this.shifts = shifts;
-        this.assignmentList = assignmentList;
-    }
+	public EmployeeSchedule() {
+	}
 
-    public EmployeeSchedule(HardSoftBigDecimalScore score, SolverStatus solverStatus) {
-        this.score = score;
-        this.solverStatus = solverStatus;
-    }
-    
-    public List<Shift> getShiftList() {
-        return shifts;
-    }
+	public EmployeeSchedule(List<Employee> employees, List<Shift> shifts,
+			List<ShiftEmployeeAssignment> assignmentList) {
+		this.employees = employees;
+		this.shifts = shifts;
+		this.assignmentList = assignmentList;
+	}
 
-    public List<ShiftEmployeeAssignment> getAssignmentList() {
-        return assignmentList;
-    }
-    
-    public void setAssignmentList(List<ShiftEmployeeAssignment> assignmentList) {
-        this.assignmentList = assignmentList;
-    }
+	public EmployeeSchedule(HardSoftBigDecimalScore score, SolverStatus solverStatus) {
+		this.score = score;
+		this.solverStatus = solverStatus;
+	}
 
+	public List<Shift> getShiftList() {
+		return shifts;
+	}
 
-    public List<Employee> getEmployees() {
-        return employees;
-    }
+	public List<ShiftEmployeeAssignment> getAssignmentList() {
+		return assignmentList;
+	}
 
-    public void setEmployees(List<Employee> employees) {
-        this.employees = employees;
-    }
+	public void setAssignmentList(List<ShiftEmployeeAssignment> assignmentList) {
+		this.assignmentList = assignmentList;
+	}
 
-    public List<Shift> getShifts() {
-        return shifts;
-    }
+	public List<Employee> getEmployees() {
+		return employees;
+	}
 
-    public void setShifts(List<Shift> shifts) {
-        this.shifts = shifts;
-    }
+	public void setEmployees(List<Employee> employees) {
+		this.employees = employees;
+	}
 
-    public HardSoftBigDecimalScore getScore() {
-        return score;
-    }
+	public List<Shift> getShifts() {
+		return shifts;
+	}
 
-    public void setScore(HardSoftBigDecimalScore score) {
-        this.score = score;
-    }
+	public void setShifts(List<Shift> shifts) {
+		this.shifts = shifts;
+	}
 
-    public SolverStatus getSolverStatus() {
-        return solverStatus;
-    }
+	public HardSoftBigDecimalScore getScore() {
+		return score;
+	}
 
-    public void setSolverStatus(SolverStatus solverStatus) {
-        this.solverStatus = solverStatus;
-    }
+	public void setScore(HardSoftBigDecimalScore score) {
+		this.score = score;
+	}
+
+	public SolverStatus getSolverStatus() {
+		return solverStatus;
+	}
+
+	public void setSolverStatus(SolverStatus solverStatus) {
+		this.solverStatus = solverStatus;
+	}
+
+	public void rebuildAssignments(int maxEmployeesPerShift) {
+		this.assignmentList = new ArrayList<>();
+
+		for (Shift shift : shifts) {
+			int totalHours = shift.getTasks().getHoursNeededForCompletion(); // adjust getter if needed
+
+			// Split into chunks of 8 hours
+			int chunks = (int) Math.ceil((double) totalHours / 8);
+
+			// Limit to maxEmployeesPerShift if necessary
+			int assignmentsCount = Math.min(chunks, maxEmployeesPerShift);
+
+			for (int i = 0; i < assignmentsCount; i++) {
+				assignmentList.add(new ShiftEmployeeAssignment(shift));
+			}
+		}
+	}
 }

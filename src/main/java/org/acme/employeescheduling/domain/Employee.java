@@ -1,31 +1,27 @@
 package org.acme.employeescheduling.domain;
 
-import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
-
-import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 
 public class Employee {
 
     private String name;
     private Set<Skill> skills;
-
-    private Set<LocalDate> unavailableDates;
-    private Set<LocalDate> undesiredDates;
-    private Set<LocalDate> desiredDates;
-
+    private Preference time;
+    private Set<Vacation> vacation;
+    private Set<SickLeave> sick;
+    
     public Employee() {
 
     }
 
-    public Employee(String name, Set<Skill> skills,
-        Set<LocalDate> unavailableDates, Set<LocalDate> undesiredDates, Set<LocalDate> desiredDates) {
+    public Employee(String name, Set<Skill> skills, Preference time, Set<Vacation> vacation, Set<SickLeave> sick) {
         this.name = name;
         this.skills = skills;
-        this.unavailableDates = unavailableDates;
-        this.undesiredDates = undesiredDates;
-        this.desiredDates = desiredDates;
+        this.time = time;
+        this.vacation = vacation != null ? vacation : new HashSet<>();
+        this.sick = sick != null ? sick : new HashSet<>();
     }
 
     public String getName() {
@@ -43,31 +39,31 @@ public class Employee {
     public void setSkills(Set<Skill> skills) {
         this.skills = skills;
     }
-
-    public Set<LocalDate> getUnavailableDates() {
-        return unavailableDates;
+    
+    public Preference getTime() {
+        return time;
     }
 
-    public void setUnavailableDates(Set<LocalDate> unavailableDates) {
-        this.unavailableDates = unavailableDates;
+    public void setTime(Preference time) {
+        this.time = time;
+    }
+    
+    public Set<Vacation> getVacation() {
+        return vacation;
     }
 
-    public Set<LocalDate> getUndesiredDates() {
-        return undesiredDates;
+    public void setVacation(Set<Vacation> vacation) {
+        this.vacation = vacation;
+    }
+    
+    public Set<SickLeave> getSick() {
+        return sick;
     }
 
-    public void setUndesiredDates(Set<LocalDate> undesiredDates) {
-        this.undesiredDates = undesiredDates;
+    public void setSick(Set<SickLeave> sick) {
+        this.sick = sick;
     }
-
-    public Set<LocalDate> getDesiredDates() {
-        return desiredDates;
-    }
-
-    public void setDesiredDates(Set<LocalDate> desiredDates) {
-        this.desiredDates = desiredDates;
-    }
-
+    
     @Override
     public String toString() {
         return name;
