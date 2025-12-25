@@ -32,11 +32,11 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
         		// Hard constraints
         		employeeOneShiftPerDay(constraintFactory),
         		shiftEmployeeHasRequiredSkills(constraintFactory),
-        		employeePreferenceSoftConstraint(constraintFactory),
         		employeeNotOnVacation(constraintFactory),
         		employeeNotSick(constraintFactory),
-        		eachShiftHasEmployee(constraintFactory)
+        		eachShiftHasEmployee(constraintFactory),
                 // Soft constraints
+        		employeePreferenceSoftConstraint(constraintFactory)
                 //undesiredDayForEmployee(constraintFactory),
                 //desiredDayForEmployee(constraintFactory),
                 //balanceEmployeeShiftAssignments(constraintFactory)
@@ -84,12 +84,8 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
         return factory.forEach(ShiftEmployeeAssignment.class)
                 .filter(assignment -> assignment.getEmployee() != null 
                         && assignment.getEmployee().getTime() != null)
-                .penalize(HardSoftBigDecimalScore.ONE_SOFT, assignment -> {
-            LocalTime assignedStart = assignment.getShift().getStart().toLocalTime();
-            LocalTime preferred = assignment.getEmployee().getTime().getPreference();
-            return (int) Math.abs(Duration.between(assignedStart, preferred).toMinutes());
-        })
-        .asConstraint("Undesired time for employee");
+                .penalize(HardSoftBigDecimalScore.ONE_SOFT)
+                .asConstraint("Undesired time for employee");
         
     }
     
