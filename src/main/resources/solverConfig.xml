@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<solver>
+    <solutionClass>org.acme.employeescheduling.domain.EmployeeSchedule</solutionClass>
+    <entityClass>org.acme.employeescheduling.domain.ShiftEmployeeAssignment</entityClass>
+
+    <scoreDirectorFactory>
+        <constraintProviderClass>
+            org.acme.employeescheduling.solver.EmployeeSchedulingConstraintProvider</constraintProviderClass>
+        </scoreDirectorFactory>
+
+<constructionHeuristic>
+        <constructionHeuristicType>FIRST_FIT</constructionHeuristicType>
+    </constructionHeuristic>
+    
+ <!--    <localSearch>
+        <localSearchType>TABU_SEARCH</localSearchType>
+        <entityTabuSize>7</entityTabuSize>
+        <aspirationEnabled>true</aspirationEnabled>
+    </localSearch>-->
+    
+    <localSearch>
+    <localSearchType>LATE_ACCEPTANCE</localSearchType>
+    <lateAcceptance>
+        <lateAcceptanceSize>400</lateAcceptanceSize>
+    </lateAcceptance>
+</localSearch> 
+</solver>
