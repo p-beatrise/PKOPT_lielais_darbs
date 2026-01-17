@@ -126,17 +126,16 @@ src/main/
 
 ## Additional Documentation
 
-- [APRAKSTS.txt](APRAKSTS.txt) - Full project description (Latvian)
-- [DOCUMENTATION.md](DOCUMENTATION.md) - Technical documentation
 - [DOCKER_GUIDE.md](DOCKER_GUIDE.md) - Docker deployment guide
 - [test-data/](test-data/) - Test dataset specifications
 
 ## Team Contributions
 
-**Paula:** Domain model, frontend UI, hard constraints, REST API, base solver configuration  
+**Paula:** Domain model, frontend UI, hard constraints, REST API, base solver configuration, documentation  
 **Jevgenijs:** Soft constraints, algorithm configurations, benchmarking, Docker setup, documentation
 
 ---
 
 **Repository:** https://github.com/p-beatrise/PKOPT_lielais_darbs  
-**Course:** Combinatorial Optimization, University of Latvia
+**Docker Image:** https://hub.docker.com/r/de1ran/employee-scheduling  
+**Course:** Practical Combinatorial Optimization, University of Latvia
