@@ -1,154 +1,142 @@
-# Employee Scheduling (Java, Quarkus, Maven)
-
-Schedule shifts to employees, accounting for employee availability and shift skill requirements.
+# Employee Scheduling Optimization
 
 ![Employee Scheduling Screenshot](./employee-scheduling-screenshot.png)
 
-- [Run the application](#run-the-application)
-- [Run the application with Timefold Solver Enterprise Edition](#run-the-application-with-timefold-solver-enterprise-edition)
-- [Run the packaged application](#run-the-packaged-application)
-- [Run the application in a container](#run-the-application-in-a-container)
-- [Run it native](#run-it-native)
+Employee shift scheduling system with constraint-based optimization, comparing Late Acceptance Hill Climbing and Tabu Search algorithms.
 
-> [!TIP]
-> <img src="https://docs.timefold.ai/_/img/models/employee-shift-scheduling.svg" align="right" width="50px" /> [Check out our off-the-shelf model for Employee Shift Scheduling](https://app.timefold.ai/models/employee-scheduling/v1). This model supports many additional constraints such as skills, pairing employees, fairness and more.
+## Quick Start
 
-## Prerequisites
+### Prerequisites
+- Java 17+
+- Maven 3.8.6+
+- (Optional) Docker
 
-1. Install Java and Maven, for example with [Sdkman](https://sdkman.io):
+### Run Application
 
-   ```sh
-   $ sdk install java
-   $ sdk install maven
-   ```
+```sh
+mvn quarkus:dev
+```
 
-## Run the application
+Open in browser: [http://localhost:8081](http://localhost:8081)
 
-1. Git clone the timefold-quickstarts repo and navigate to this directory:
+## Features
 
-   ```sh
-   $ git clone https://github.com/TimefoldAI/timefold-quickstarts.git
-   ...
-   $ cd timefold-quickstarts/java/employee-scheduling
-   ```
+### Optimization Algorithms
 
-2. Start the application with Maven:
+Two metaheuristic algorithms with configurable selection via `application.properties`:
 
-   ```sh
-   $ mvn quarkus:dev
-   ```
+1. **Late Acceptance Hill Climbing** (`solverConfig.xml` or `solverConfigLateAcceptance.xml`)
+   - Parameter: `lateAcceptanceSize = 400`
+   - Best for: Stable, consistent results on balanced datasets
+   
+2. **Tabu Search** (`solverConfigTabu.xml`)
+   - Parameter: `entityTabuSize = 7`
+   - Best for: Higher quality solutions, better exploration
 
-3. Visit [http://localhost:8080](http://localhost:8080) in your browser.
+**Switch algorithms:**
+```properties
+# application.properties
+quarkus.timefold.solver-config-xml=solverConfig.xml          # Late Acceptance
+quarkus.timefold.solver-config-xml=solverConfigTabu.xml      # Tabu Search
+```
 
-4. Click on the **Solve** button.
+### Constraints
 
-Then try _live coding_:
+**Hard Constraints** (must be satisfied):
+- One shift per employee per day
+- Employee has required skills for shift
+- No work during vacation
+- No work during sick leave
+- Every shift must be covered
 
-- Make some changes in the source code.
-- Refresh your browser (F5).
+**Soft Constraints** (optimized):
+- Balance workload across employees
+- Match employee time preferences (+1 bonus / -1 penalty)
+- Limit night shifts (after 22:00) to max 8/month
 
-Notice that those changes are immediately in effect.
+## Benchmarking
 
-## Run the application with Timefold Solver Enterprise Edition
+Compare algorithm performance across different dataset sizes.
 
-For high-scalability use cases, switch to [Timefold Solver Enterprise Edition](https://docs.timefold.ai/timefold-solver/latest/enterprise-edition/enterprise-edition), our commercial offering.  
-[Contact Timefold](https://timefold.ai/contact) to obtain the credentials required to access our private Enterprise Maven repository.
+### Run Benchmarks
 
-1. Create `.m2/settings.xml` in your home directory with the following content:
+```sh
+mvn clean compile -Dmaven.test.skip=true
+mvn exec:java -Dexec.mainClass="org.acme.employeescheduling.rest.BenchmarkRunner"
+```
 
-   ```xml
-   <settings>
-     ...
-     <servers>
-       <server>
-         <!-- Replace "my_username" and "my_password" with credentials obtained from a Timefold representative. -->
-         <id>timefold-solver-enterprise</id>
-         <username>my_username</username>
-         <password>my_password</password>
-       </server>
-     </servers>
-     ...
-   </settings>
-   ```
+**Duration:** ~5-10 minutes (2 algorithms × 3 datasets × 3 runs × 30s each)
 
-   See [Settings Reference](https://maven.apache.org/settings.html) for more information on Maven settings.
+### View Results
 
-2. Start the application with Maven:
+Results are saved to `target/benchmarks/[timestamp]/index.html`. Open in browser to see:
+- Best score comparison charts
+- Performance statistics
+- Algorithm convergence graphs
 
-   ```sh
-   $ mvn clean quarkus:dev -Denterprise
-   ```
+### Test Datasets
 
-3. Visit [http://localhost:8080](http://localhost:8080) in your browser.
+- **SMALL:** 5 employees, 9 shifts (3 days) - Quick validation
+- **MEDIUM:** 20 employees, 75 shifts (5 days) - Realistic scenario
+- **LARGE:** 50 employees, 210 shifts (7 days) - Stress test
 
-4. Click on the **Solve** button.
+### Understanding Results
 
-Then try _live coding_:
+**Score format:** `Xhard/Ysoft`
+- **Hard score (X):** Must be 0 (all mandatory constraints satisfied)
+- **Soft score (Y):** Higher is better (quality of solution)
 
-- Make some changes in the source code.
-- Refresh your browser (F5).
+**Expected outcomes:**
+- Late Acceptance: Consistent, stable performance
+- Tabu Search: Better exploration, higher quality solutions long-term
 
-Notice that those changes are immediately in effect.
+## Docker Deployment
 
-## Run the packaged application
+```sh
+docker build -t employee-scheduling:latest .
+docker run -p 8081:8081 employee-scheduling:latest
+```
 
-When you're done iterating in `quarkus:dev` mode, package the application to run as a conventional jar file.
+Access at [http://localhost:8081](http://localhost:8081)
 
-1. Compile it with Maven:
+See [DOCKER_GUIDE.md](DOCKER_GUIDE.md) for publishing to DockerHub.
 
-   ```sh
-   $ mvn package
-   ```
+## Project Structure
 
-2. Run it:
+```
+src/main/
+├── java/org/acme/employeescheduling/
+│   ├── domain/              # Domain model (Employee, Shift, etc.)
+│   ├── solver/              # Constraints and scoring rules
+│   └── rest/                # REST endpoints, data generation, benchmarking
+├── resources/
+│   ├── application.properties
+│   ├── solverConfig.xml               # Late Acceptance (default)
+│   ├── solverConfigTabu.xml           # Tabu Search
+│   └── benchmarkConfig.xml            # Benchmark configuration
+```
 
-   ```sh
-   $ java -jar ./target/quarkus-app/quarkus-run.jar
-   ```
+## Technology Stack
 
-   > **Note**  
-   > To run it on port 8081 instead, add `-Dquarkus.http.port=8081`.
+- **Java:** 17 (OpenJDK)
+- **Framework:** Quarkus 3.30.2
+- **Solver:** Timefold Solver 1.29.0 Community Edition
+- **Build:** Maven 3.9.8
+- **Deployment:** Docker
 
-3. Visit [http://localhost:8080](http://localhost:8080) in your browser.
+## Additional Documentation
 
-4. Click on the **Solve** button.
+- [APRAKSTS.txt](APRAKSTS.txt) - Full project description (Latvian)
+- [DOCUMENTATION.md](DOCUMENTATION.md) - Technical documentation
+- [DOCKER_GUIDE.md](DOCKER_GUIDE.md) - Docker deployment guide
+- [test-data/](test-data/) - Test dataset specifications
 
-## Run the application in a container
+## Team Contributions
 
-1. Build a container image:
+**Paula:** Domain model, frontend UI, hard constraints, REST API, base solver configuration  
+**Jevgenijs:** Soft constraints, algorithm configurations, benchmarking, Docker setup, documentation
 
-   ```sh
-   $ mvn package -Dcontainer
-   ```
+---
 
-2. Run a container:
-
-   ```sh
-   $ docker run -p 8080:8080 $USER/employee-scheduling:1.0-SNAPSHOT
-   ```
-
-## Run it native
-
-To increase startup performance for serverless deployments, build the application as a native executable:
-
-1. [Install GraalVM and `gu` install the native-image tool](https://quarkus.io/guides/building-native-image#configuring-graalvm).
-
-2. Compile it natively. This takes a few minutes:
-
-   ```sh
-   $ mvn package -Dnative -DskipTests
-   ```
-
-3. Run the native executable:
-
-   ```sh
-   $ ./target/*-runner
-   ```
-
-4. Visit [http://localhost:8080](http://localhost:8080) in your browser.
-
-5. Click on the **Solve** button.
-
-## More information
-
-Visit [timefold.ai](https://timefold.ai).
+**Repository:** https://github.com/p-beatrise/PKOPT_lielais_darbs  
+**Course:** Combinatorial Optimization, University of Latvia

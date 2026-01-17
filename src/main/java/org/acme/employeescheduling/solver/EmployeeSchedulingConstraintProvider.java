@@ -36,10 +36,8 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
         		employeeNotSick(constraintFactory),
         		eachShiftHasEmployee(constraintFactory),
                 // Soft constraints
-        		employeePreferenceSoftConstraint(constraintFactory)
-                //undesiredDayForEmployee(constraintFactory),
-                //desiredDayForEmployee(constraintFactory),
-                //balanceEmployeeShiftAssignments(constraintFactory)
+        		employeePreferenceSoftConstraint(constraintFactory),                employeePreferenceReward(constraintFactory),                balanceWorkload(constraintFactory),
+                penalizeExcessiveNightShifts(constraintFactory)
         };
     }
     
@@ -80,13 +78,42 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
         return employeeSkills.containsAll(shiftSkills);
     }
     
+    /**
+     * S1: Darbinieka maiņas preferenču ievērošana
+     * Ja Worker.Preference.ShiftStartTimePreference sakrīt ar Shift.StartTime:
+     *   - Bonuss: SoftScore += 1
+     * Ja nesakrīt:
+     *   - Sods: SoftScore -= 1
+     */
     private Constraint employeePreferenceSoftConstraint(ConstraintFactory factory) {
         return factory.forEach(ShiftEmployeeAssignment.class)
                 .filter(assignment -> assignment.getEmployee() != null 
                         && assignment.getEmployee().getTime() != null)
+                .filter(assignment -> {
+                    LocalTime preferredTime = assignment.getEmployee().getTime().getPreference();
+                    LocalTime shiftStartTime = assignment.getShift().getStart().toLocalTime();
+                    // Nesakrīt - sodām
+                    return !preferredTime.equals(shiftStartTime);
+                })
                 .penalize(HardSoftBigDecimalScore.ONE_SOFT)
-                .asConstraint("Undesired time for employee");
-        
+                .asConstraint("Preference mismatch penalty");
+    }
+    
+    /**
+     * S1 (Part 2): Bonuss par preferenču sakritību
+     */
+    private Constraint employeePreferenceReward(ConstraintFactory factory) {
+        return factory.forEach(ShiftEmployeeAssignment.class)
+                .filter(assignment -> assignment.getEmployee() != null 
+                        && assignment.getEmployee().getTime() != null)
+                .filter(assignment -> {
+                    LocalTime preferredTime = assignment.getEmployee().getTime().getPreference();
+                    LocalTime shiftStartTime = assignment.getShift().getStart().toLocalTime();
+                    // Sakrīt - bonuss
+                    return preferredTime.equals(shiftStartTime);
+                })
+                .reward(HardSoftBigDecimalScore.ONE_SOFT)
+                .asConstraint("Preference match reward");
     }
     
     private Constraint employeeNotOnVacation(ConstraintFactory constraintFactory) {
@@ -223,5 +250,52 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
                 .penalizeBigDecimal(HardSoftBigDecimalScore.ONE_SOFT, LoadBalance::unfairness)
                 .asConstraint("Balance employee shift assignments");
     }*/
-
+    
+    // ========== NEW SOFT CONSTRAINTS ==========
+    
+    /**
+     * Balance workload across employees using loadBalance.
+     * Penalizes unfair distribution of shift assignments.
+     */
+    private Constraint balanceWorkload(ConstraintFactory constraintFactory) {
+        return constraintFactory
+                .forEach(ShiftEmployeeAssignment.class)
+                .filter(assignment -> assignment.getEmployee() != null)
+                .groupBy(
+                        ShiftEmployeeAssignment::getEmployee,
+                        ConstraintCollectors.count()
+                )
+                .groupBy(ConstraintCollectors.loadBalance(
+                        (employee, shiftCount) -> employee,
+                        (employee, shiftCount) -> shiftCount
+                ))
+                .penalizeBigDecimal(HardSoftBigDecimalScore.ONE_SOFT, LoadBalance::unfairness)
+                .asConstraint("Balance workload");
+    }
+    
+    /**
+     * Penalize excessive night shifts per employee.
+     * Night shift = shift starting after 22:00.
+     * Threshold: max 8 night shifts per month.
+     */
+    private Constraint penalizeExcessiveNightShifts(ConstraintFactory constraintFactory) {
+        int maxNightShiftsPerMonth = 8;
+        
+        return constraintFactory
+                .forEach(ShiftEmployeeAssignment.class)
+                .filter(assignment -> assignment.getEmployee() != null)
+                .filter(assignment -> {
+                    LocalTime startTime = assignment.getShift().getStart().toLocalTime();
+                    return startTime.isAfter(LocalTime.of(22, 0));
+                })
+                .groupBy(
+                        ShiftEmployeeAssignment::getEmployee,
+                        assignment -> assignment.getShift().getStart().toLocalDate().withDayOfMonth(1),
+                        ConstraintCollectors.count()
+                )
+                .filter((employee, month, nightShiftCount) -> nightShiftCount > maxNightShiftsPerMonth)
+                .penalize(HardSoftBigDecimalScore.ONE_SOFT,
+                        (employee, month, nightShiftCount) -> nightShiftCount - maxNightShiftsPerMonth)
+                .asConstraint("Limit night shifts per employee");
+    }
 }

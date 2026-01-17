@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plannerBenchmark xmlns="https://timefold.ai/xsd/benchmark" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="https://timefold.ai/xsd/benchmark https://timefold.ai/xsd/benchmark/benchmark.xsd">
+    
+    <benchmarkDirectory>target/benchmarks</benchmarkDirectory>
+    
+    <!-- Parallel benchmarking -->
+    <parallelBenchmarkCount>AUTO</parallelBenchmarkCount>
+    
+    <!-- Warm up settings -->
+    <warmUpSecondsSpentLimit>10</warmUpSecondsSpentLimit>
+    
+    <!-- Inherited solver configuration (shared by all benchmarks) -->
+    <inheritedSolverBenchmark>
+        <solver>
+            <solutionClass>org.acme.employeescheduling.domain.EmployeeSchedule</solutionClass>
+            <entityClass>org.acme.employeescheduling.domain.ShiftEmployeeAssignment</entityClass>
+            
+            <scoreDirectorFactory>
+                <constraintProviderClass>org.acme.employeescheduling.solver.EmployeeSchedulingConstraintProvider</constraintProviderClass>
+            </scoreDirectorFactory>
+            
+            <termination>
+                <secondsSpentLimit>30</secondsSpentLimit>
+            </termination>
+        </solver>
+        
+        <!-- Number of times to run each combination -->
+        <subSingleCount>3</subSingleCount>
+    </inheritedSolverBenchmark>
+    
+    <!-- Solver benchmark: Late Acceptance -->
+    <solverBenchmark>
+        <name>Late Acceptance</name>
+        <solver>
+            <constructionHeuristic>
+                <constructionHeuristicType>FIRST_FIT</constructionHeuristicType>
+            </constructionHeuristic>
+            
+            <localSearch>
+                <acceptor>
+                    <lateAcceptanceSize>400</lateAcceptanceSize>
+                </acceptor>
+                <forager>
+                    <acceptedCountLimit>1</acceptedCountLimit>
+                </forager>
+            </localSearch>
+        </solver>
+    </solverBenchmark>
+    
+    <!-- Solver benchmark: Tabu Search -->
+    <solverBenchmark>
+        <name>Tabu Search</name>
+        <solver>
+            <constructionHeuristic>
+                <constructionHeuristicType>FIRST_FIT</constructionHeuristicType>
+            </constructionHeuristic>
+            
+            <localSearch>
+                <acceptor>
+                    <entityTabuSize>7</entityTabuSize>
+                </acceptor>
+                <forager>
+                    <acceptedCountLimit>1000</acceptedCountLimit>
+                </forager>
+            </localSearch>
+        </solver>
+    </solverBenchmark>
+    
+    <!-- Problem benchmark configurations -->
+    <!-- You'll need to create these dataset files or generate them programmatically -->
+    <!--
+    <problemBenchmarks>
+        <inputSolutionFile>data/small-dataset.json</inputSolutionFile>
+        <inputSolutionFile>data/medium-dataset.json</inputSolutionFile>
+        <inputSolutionFile>data/large-dataset.json</inputSolutionFile>
+    </problemBenchmarks>
+    -->
+</plannerBenchmark>

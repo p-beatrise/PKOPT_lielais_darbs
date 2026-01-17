@@ -20,6 +20,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import org.acme.employeescheduling.domain.Employee;
 import org.acme.employeescheduling.domain.EmployeeSchedule;
 import org.acme.employeescheduling.domain.Shift;
+import org.acme.employeescheduling.domain.ShiftEmployeeAssignment;
 import org.acme.employeescheduling.domain.SickLeave;
 import org.acme.employeescheduling.domain.Skill;
 import org.acme.employeescheduling.domain.Task;
@@ -32,6 +33,7 @@ import org.slf4j.LoggerFactory;
 public class DemoDataGenerator {
     public enum DemoData {
         SMALL,
+        MEDIUM,
         LARGE
     }
 
@@ -61,8 +63,12 @@ public class DemoDataGenerator {
     Map<String, List<LocalTime>> locationToShiftStartTimeListMap = new HashMap<>();
 
     public EmployeeSchedule generateDemoData(DemoData demoData) {
-        return generateDemoData();
-    };
+        return switch (demoData) {
+            case SMALL -> generateSmallDataSet();
+            case MEDIUM -> generateConfigurableDataSet(20, 15, 3);
+            case LARGE -> generateConfigurableDataSet(50, 30, 7);
+        };
+    }
     		
     public EmployeeSchedule generateDemoData() {
     	return generateSmallDataSet();
@@ -91,7 +97,7 @@ public class DemoDataGenerator {
         List<Employee> employees = new ArrayList<>();
 
         employees.add(new Employee(
-                "Jānis 1",
+                "Jānis Bērziņš",
                 Set.of(Skill.SKILL1, Skill.SKILL2),
                 new Preference(LocalTime.of(8, 0)),
                 Set.of(
@@ -108,7 +114,7 @@ public class DemoDataGenerator {
         ));
 
         employees.add(new Employee(
-                "Jānis 2",
+                "Anna Kalniņa",
                 Set.of(Skill.SKILL2),
                 new Preference(LocalTime.of(8, 0)),
                 Set.of(
@@ -125,7 +131,7 @@ public class DemoDataGenerator {
         ));
 
         employees.add(new Employee(
-                "Jānis 3",
+                "Māris Ozols",
                 Set.of(Skill.SKILL3, Skill.SKILL2),
                 new Preference(LocalTime.of(8, 0)),
                 Set.of(),
@@ -133,7 +139,7 @@ public class DemoDataGenerator {
         ));
 
         employees.add(new Employee(
-                "Jānis 4",
+                "Līga Liepiņa",
                 Set.of(Skill.SKILL1, Skill.SKILL3),
                 new Preference(LocalTime.of(8, 0)),
                 Set.of(),
@@ -150,7 +156,7 @@ public class DemoDataGenerator {
         ));
 
         employees.add(new Employee(
-        		"Jānis 5",
+        		"Andris Kļaviņš",
                 Set.of(Skill.SKILL2, Skill.SKILL3),
                 new Preference(LocalTime.of(8, 0)),
                 Set.of(),
@@ -158,7 +164,7 @@ public class DemoDataGenerator {
         ));
 
         employees.add(new Employee(
-        		"Jānis 6",
+        		"Kristīne Ozola",
                 Set.of(Skill.SKILL3, Skill.SKILL2),
                 new Preference(LocalTime.of(16, 0)),
                 Set.of(),
@@ -166,7 +172,7 @@ public class DemoDataGenerator {
         ));
 
         employees.add(new Employee(
-        		"Jānis 7",
+        		"Pēteris Vītols",
                 Set.of(Skill.SKILL1),
                 new Preference(LocalTime.of(16, 0)),
                 Set.of(),
@@ -174,7 +180,7 @@ public class DemoDataGenerator {
         ));
 
         employees.add(new Employee(
-        		"Jānis 8",
+        		"Inese Jansone",
                 Set.of(Skill.SKILL2),
                 new Preference(LocalTime.of(16, 0)),
                 Set.of(),
@@ -182,7 +188,7 @@ public class DemoDataGenerator {
         ));
 
         employees.add(new Employee(
-        		"Jānis 9",
+        		"Edgars Strazds",
                 Set.of(Skill.SKILL3),
                 new Preference(LocalTime.of(16, 0)),
                 Set.of(),
@@ -190,7 +196,7 @@ public class DemoDataGenerator {
         ));
 
         employees.add(new Employee(
-        		"Jānis 10",
+        		"Ilze Rozīte",
                 Set.of(Skill.SKILL1),
                 new Preference(LocalTime.of(16, 0)),
                 Set.of(),
@@ -198,7 +204,7 @@ public class DemoDataGenerator {
         ));
 
         employees.add(new Employee(
-        		"Jānis 11",
+        		"Roberts Kalējs",
                 Set.of(Skill.SKILL2),
                 new Preference(LocalTime.of(16, 0)),
                 Set.of(),
@@ -206,7 +212,7 @@ public class DemoDataGenerator {
         ));
 
         employees.add(new Employee(
-        		"Jānis 12",
+        		"Dace Siliņa",
                 Set.of(Skill.SKILL3),
                 new Preference(LocalTime.of(16, 0)),
                 Set.of(),
@@ -214,7 +220,7 @@ public class DemoDataGenerator {
         ));
 
         employees.add(new Employee(
-        		"Jānis 13",
+        		"Aigars Grīnbergs",
                 Set.of(Skill.SKILL1),
                 new Preference(LocalTime.of(16, 0)),
                 Set.of(),
@@ -222,7 +228,7 @@ public class DemoDataGenerator {
         ));
 
         employees.add(new Employee(
-        		"Jānis 14",
+        		"Sanita Kārkliņa",
                 Set.of(Skill.SKILL2),
                 new Preference(LocalTime.of(16, 0)),
                 Set.of(),
@@ -230,7 +236,7 @@ public class DemoDataGenerator {
         ));
 
         employees.add(new Employee(
-        		"Jānis 15",
+        		"Valdis Balodis",
                 Set.of(Skill.SKILL3),
                 new Preference(LocalTime.of(16, 0)),
                 Set.of(),
@@ -238,7 +244,7 @@ public class DemoDataGenerator {
         ));
         
         employees.add(new Employee(
-        		"Jānis 16",
+        		"Elīna Meža",
         		Set.of(Skill.SKILL3, Skill.SKILL2),
         		new Preference(LocalTime.of(16, 0)),
         		Set.of(),
@@ -247,7 +253,7 @@ public class DemoDataGenerator {
 
         
         employees.add(new Employee(
-        		"Jānis 17",
+        		"Guntis Liepa",
         		Set.of(Skill.SKILL3, Skill.SKILL2,Skill.SKILL1),
         		new Preference(LocalTime.of(0, 0)),
         		Set.of(),
@@ -256,7 +262,7 @@ public class DemoDataGenerator {
 
         
         employees.add(new Employee(
-        		"Jānis 18",
+        		"Zane Kronberga",
                 Set.of(Skill.SKILL3, Skill.SKILL2,Skill.SKILL1),
                 new Preference(LocalTime.of(0, 0)),
                 Set.of(),
@@ -396,5 +402,133 @@ public class DemoDataGenerator {
 
         return tasks.get(ThreadLocalRandom.current().nextInt(tasks.size()));
     }
-
+    
+    /**
+     * Generate a configurable dataset for benchmarking.
+     * @param employeeCount Number of employees to generate
+     * @param shiftCount Number of shifts per day
+     * @param days Number of days in the schedule
+     */
+    public EmployeeSchedule generateConfigurableDataSet(int employeeCount, int shiftCount, int days) {
+        EmployeeSchedule employeeSchedule = new EmployeeSchedule();
+        LocalDate startDate = LocalDate.now().with(TemporalAdjusters.nextOrSame(DayOfWeek.MONDAY));
+        
+        // Create employees with random skills
+        List<Employee> employees = generateEmployees(employeeCount, startDate);
+        employeeSchedule.setEmployees(employees);
+        
+        // Create shifts
+        List<Shift> shifts = generateShifts(shiftCount, days, startDate);
+        LOGGER.info("Generated configurable dataset: {} employees, {} shifts over {} days", 
+                    employeeCount, shifts.size(), days);
+        employeeSchedule.setShifts(shifts);
+        
+        // Create assignments (one per shift, initially unassigned)
+        List<ShiftEmployeeAssignment> assignments = new ArrayList<>();
+        for (Shift shift : shifts) {
+            ShiftEmployeeAssignment assignment = new ShiftEmployeeAssignment();
+            assignment.setShift(shift);
+            assignment.setEmployee(null); // Solver will assign
+            assignments.add(assignment);
+        }
+        employeeSchedule.setAssignmentList(assignments);
+        
+        return employeeSchedule;
+    }
+    
+    private List<Employee> generateEmployees(int count, LocalDate startDate) {
+        List<Employee> employees = new ArrayList<>();
+        Skill[] allSkills = Skill.values();
+        LocalTime[] preferredTimes = {
+            LocalTime.of(8, 0),
+            LocalTime.of(16, 0),
+            LocalTime.of(0, 0)
+        };
+        
+        // Diverse Latvian names
+        String[] employeeNames = {
+            "Jānis Bērziņš", "Anna Kalniņa", "Māris Ozols", "Līga Liepiņa", "Andris Kļaviņš",
+            "Kristīne Ozola", "Pēteris Vītols", "Inese Jansone", "Edgars Strazds", "Ilze Rozīte",
+            "Roberts Kalējs", "Dace Siliņa", "Aigars Grīnbergs", "Sanita Kārkliņa", "Valdis Balodis",
+            "Elīna Meža", "Guntis Liepa", "Zane Kronberga", "Artūrs Priede", "Ieva Ķirsone",
+            "Kaspars Osis", "Laura Lapa", "Uldis Upītis", "Līva Lūse", "Ivars Ērglis",
+            "Rita Rīga", "Normunds Neimanis", "Vija Vētra", "Eduards Ēce", "Agnese Alksne",
+            "Gatis Gailītis", "Jolanta Jaunsaule", "Raimonds Rūsis", "Sandra Skujiņa", "Ģirts Grauds",
+            "Māra Mārtiņa", "Viktors Veits", "Laima Lazdiņa", "Rūdolfs Rasa", "Signe Spāre",
+            "Juris Jansons", "Aija Avotiņa", "Kārlis Krūmiņš", "Baiba Bērza", "Indulis Indriksons",
+            "Velta Vilde", "Staņislavs Strauss", "Māra Mākoņa", "Igors Inka", "Anita Āboliņa"
+        };
+        
+        for (int i = 0; i < count; i++) {
+            // Random 1-3 skills per employee
+            Set<Skill> skills = new java.util.HashSet<>();
+            int skillCount = ThreadLocalRandom.current().nextInt(1, 4);
+            for (int j = 0; j < skillCount; j++) {
+                skills.add(allSkills[ThreadLocalRandom.current().nextInt(allSkills.length)]);
+            }
+            
+            // Random time preference
+            LocalTime preferredTime = preferredTimes[ThreadLocalRandom.current().nextInt(preferredTimes.length)];
+            
+            // 20% chance of vacation
+            Set<Vacation> vacations = new java.util.HashSet<>();
+            if (ThreadLocalRandom.current().nextDouble() < 0.2) {
+                LocalDate vacStart = startDate.plusDays(ThreadLocalRandom.current().nextInt(7));
+                vacations.add(new Vacation(vacStart, vacStart.plusDays(1)));
+            }
+            
+            // 10% chance of sick leave
+            Set<SickLeave> sickLeaves = new java.util.HashSet<>();
+            if (ThreadLocalRandom.current().nextDouble() < 0.1) {
+                LocalDate sickStart = startDate.plusDays(ThreadLocalRandom.current().nextInt(7));
+                sickLeaves.add(new SickLeave(sickStart, sickStart.plusDays(1)));
+            }
+            
+            String employeeName = i < employeeNames.length ? employeeNames[i] : "Darbinieks " + (i + 1);
+            
+            employees.add(new Employee(
+                employeeName,
+                skills,
+                new Preference(preferredTime),
+                vacations,
+                sickLeaves
+            ));
+        }
+        
+        return employees;
+    }
+    
+    private List<Shift> generateShifts(int shiftsPerDay, int days, LocalDate startDate) {
+        List<Shift> shifts = new ArrayList<>();
+        AtomicInteger shiftId = new AtomicInteger(0);
+        
+        String[] locations = {"Location A", "Location B", "Location C", "Location D"};
+        LocalTime[] shiftTimes = {
+            DAY_SHIFT_START_TIME,
+            AFTERNOON_SHIFT_START_TIME,
+            NIGHT_SHIFT_START_TIME
+        };
+        
+        for (int day = 0; day < days; day++) {
+            LocalDate date = startDate.plusDays(day);
+            
+            for (int i = 0; i < shiftsPerDay; i++) {
+                String location = locations[ThreadLocalRandom.current().nextInt(locations.length)];
+                LocalTime startTime = shiftTimes[ThreadLocalRandom.current().nextInt(shiftTimes.length)];
+                
+                LocalDateTime shiftStart = date.atTime(startTime);
+                LocalDateTime shiftEnd = shiftStart.plus(SHIFT_LENGTH);
+                
+                // Random task
+                List<Task> taskList = createSmallDataSetTasks();
+                Task task = pickRandom(taskList);
+                
+                Shift shift = new Shift(task, shiftStart, shiftEnd, location);
+                shift.setId(String.valueOf(shiftId.getAndIncrement()));
+                shifts.add(shift);
+            }
+        }
+        
+        return shifts;
+    }
 }
