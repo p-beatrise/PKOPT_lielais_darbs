@@ -36,8 +36,10 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
         		employeeNotSick(constraintFactory),
         		eachShiftHasEmployee(constraintFactory),
                 // Soft constraints
-        		employeePreferenceSoftConstraint(constraintFactory),                employeePreferenceReward(constraintFactory),                balanceWorkload(constraintFactory),
-                penalizeExcessiveNightShifts(constraintFactory)
+        		employeePreferenceSoftConstraint(constraintFactory),
+                        employeePreferenceReward(constraintFactory),
+                        balanceWorkload(constraintFactory),
+                        penalizeExcessiveNightShifts(constraintFactory)
         };
     }
     
@@ -53,7 +55,7 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
                 )
                 .filter((employee, date, count) -> count > 1)
                 .penalize(HardSoftBigDecimalScore.ONE_HARD)
-                .asConstraint("No nore than one shift");
+                .asConstraint("No more than one shift per day");
     }
 
     private LocalDate toLocalDate(ShiftEmployeeAssignment assignment) {
@@ -80,7 +82,7 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
     
     /**
      * S1: Darbinieka maiņas preferenču ievērošana
-     * Ja Worker.Preference.ShiftStartTimePreference sakrīt ar Shift.StartTime:
+     * Ja Employee.Preference.preferredStartTime sakrīt ar Shift.startTime:
      *   - Bonuss: SoftScore += 1
      * Ja nesakrīt:
      *   - Sods: SoftScore -= 1
@@ -177,85 +179,13 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
                 .penalize(HardSoftBigDecimalScore.ONE_HARD)
                 .asConstraint("Each shift must have at least one employee");
     }
-
-    /*
-    Constraint requiredSkill(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(Shift.class)
-                .filter(shift -> !shift.getEmployee().getSkills().contains(shift.getRequiredSkill()))
-                .penalize(HardSoftBigDecimalScore.ONE_HARD)
-                .asConstraint("Missing required skill");
-    }
-
-    Constraint noOverlappingShifts(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEachUniquePair(Shift.class, equal(Shift::getEmployee),
-                overlapping(Shift::getStart, Shift::getEnd))
-                .penalize(HardSoftBigDecimalScore.ONE_HARD,
-                        EmployeeSchedulingConstraintProvider::getMinuteOverlap)
-                .asConstraint("Overlapping shift");
-    }
-
-    Constraint atLeast10HoursBetweenTwoShifts(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(Shift.class)
-                .join(Shift.class, equal(Shift::getEmployee), lessThanOrEqual(Shift::getEnd, Shift::getStart))
-                .filter((firstShift,
-                        secondShift) -> Duration.between(firstShift.getEnd(), secondShift.getStart()).toHours() < 10)
-                .penalize(HardSoftBigDecimalScore.ONE_HARD,
-                        (firstShift, secondShift) -> {
-                            int breakLength = (int) Duration.between(firstShift.getEnd(), secondShift.getStart()).toMinutes();
-                            return (10 * 60) - breakLength;
-                        })
-                .asConstraint("At least 10 hours between 2 shifts");
-    }
-
-    Constraint oneShiftPerDay(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEachUniquePair(Shift.class, equal(Shift::getEmployee),
-                equal(shift -> shift.getStart().toLocalDate()))
-                .penalize(HardSoftBigDecimalScore.ONE_HARD)
-                .asConstraint("Max one shift per day");
-    }
-
-    Constraint unavailableEmployee(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(Shift.class)
-                .join(Employee.class, equal(Shift::getEmployee, Function.identity()))
-                .flattenLast(Employee::getUnavailableDates)
-                .filter(Shift::isOverlappingWithDate)
-                .penalize(HardSoftBigDecimalScore.ONE_HARD, Shift::getOverlappingDurationInMinutes)
-                .asConstraint("Unavailable employee");
-    }
-
-    Constraint undesiredDayForEmployee(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(Shift.class)
-                .join(Employee.class, equal(Shift::getEmployee, Function.identity()))
-                .flattenLast(Employee::getUndesiredDates)
-                .filter(Shift::isOverlappingWithDate)
-                .penalize(HardSoftBigDecimalScore.ONE_SOFT, Shift::getOverlappingDurationInMinutes)
-                .asConstraint("Undesired day for employee");
-    }
-
-    Constraint desiredDayForEmployee(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(Shift.class)
-                .join(Employee.class, equal(Shift::getEmployee, Function.identity()))
-                .flattenLast(Employee::getDesiredDates)
-                .filter(Shift::isOverlappingWithDate)
-                .reward(HardSoftBigDecimalScore.ONE_SOFT, Shift::getOverlappingDurationInMinutes)
-                .asConstraint("Desired day for employee");
-    }
-
-    Constraint balanceEmployeeShiftAssignments(ConstraintFactory constraintFactory) {
-        return constraintFactory.forEach(Shift.class)
-                .groupBy(Shift::getEmployee, ConstraintCollectors.count())
-                .complement(Employee.class, e -> 0) // Include all employees which are not assigned to any shift.c
-                .groupBy(ConstraintCollectors.loadBalance((employee, shiftCount) -> employee,
-                        (employee, shiftCount) -> shiftCount))
-                .penalizeBigDecimal(HardSoftBigDecimalScore.ONE_SOFT, LoadBalance::unfairness)
-                .asConstraint("Balance employee shift assignments");
-    }*/
     
-    // ========== NEW SOFT CONSTRAINTS ==========
+    // ========== SOFT CONSTRAINTS ==========
     
     /**
-     * Balance workload across employees using loadBalance.
-     * Penalizes unfair distribution of shift assignments.
+     * S2: Slodzes balansēšana starp darbiniekiem
+     * Aprēķinā katra darbinieka kopējo piešķirto maiņu skaitu un salīdzinā ar vidējo.
+     * Par katru maiņu, par ko darbinieks pārsniedz vidējo slodzi, SoftScore -= 1.
      */
     private Constraint balanceWorkload(ConstraintFactory constraintFactory) {
         return constraintFactory
@@ -274,9 +204,9 @@ public class EmployeeSchedulingConstraintProvider implements ConstraintProvider 
     }
     
     /**
-     * Penalize excessive night shifts per employee.
-     * Night shift = shift starting after 22:00.
-     * Threshold: max 8 night shifts per month.
+     * S3: Nakts maiņu ierobežošana
+     * Ja Shift sākas plkst. 22:00 vai vēlāk (nakts maiņa), un darbiniekam vienā mēnesī
+     * ir jau bijušas 8 naktsmaiņas, par katru papildu nakts maiņu SoftScore -= 1.
      */
     private Constraint penalizeExcessiveNightShifts(ConstraintFactory constraintFactory) {
         int maxNightShiftsPerMonth = 8;
